@@ -3,8 +3,8 @@
 A small demo project for building [MCP](https://modelcontextprotocol.io) servers
 with [FastMCP](https://github.com/jlowin/fastmcp). It contains two servers:
 
-- **`main.py`** — an **Expense Tracker** MCP server backed by SQLite.
-- **`main_old.py`** — a minimal **Demo** MCP server (dice roller + adder), kept
+- **[main.py](main.py)** — a **Transaction Tracker** MCP server backed by SQLite.
+- **[main_old.py](main_old.py)** — a minimal **Demo** MCP server (dice roller + adder), kept
   as a starting-point reference.
 
 ## Requirements
@@ -23,28 +23,41 @@ This installs dependencies into a local `.venv` from [uv.lock](uv.lock).
 
 ## Servers
 
-### Expense Tracker — [main.py](main.py)
+### Transaction Tracker — [main.py](main.py)
 
-A FastMCP server named `Expense Tracker MCP Server` that persists expenses in a
-local SQLite database (`expenses.db`, created automatically on startup and
-git-ignored).
+A FastMCP server named `Transaction Tracker MCP Server` that persists debit and
+credit transactions in a local SQLite database (`transactions.db`, created
+automatically on startup and git-ignored).
 
-The `expenses` table schema:
+The `transactions` table schema:
 
-| Column      | Type    | Notes                          |
-| ----------- | ------- | ------------------------------ |
-| id          | INTEGER | Primary key, auto-increment    |
-| name        | TEXT    | Required                       |
-| amount      | REAL    | Required                       |
-| category    | TEXT    | Required                       |
-| subcategory | TEXT    | Optional, defaults to `''`     |
-| note        | TEXT    | Optional, defaults to `''`     |
+| Column      | Type    | Notes                                                  |
+| ----------- | ------- | ------------------------------------------------------ |
+| id          | INTEGER | Primary key, auto-increment                            |
+| name        | TEXT    | Required                                               |
+| amount      | REAL    | Required, must be positive                             |
+| category    | TEXT    | Required                                               |
+| subcategory | TEXT    | Optional, defaults to `''`                             |
+| side        | TEXT    | `debit` or `credit`, defaults to `''`                  |
+| date        | TEXT    | `YYYY-MM-DD`, defaults to current date                 |
+| note        | TEXT    | Optional, defaults to `''`                             |
 
 **Tools:**
 
-- `add_expense(name, amount, category, subcategory="", note="")` — inserts an
-  expense and returns `{"status": "ok", "id": <row id>}`.
-- `list_expenses()` — returns all expenses ordered by `id` as a list of dicts.
+- `add_transaction(name, amount, category, subcategory="", date=None, note="", side="debit")`
+  — inserts a transaction and returns `{"status": "ok", "id": <row id>}`.
+  `date` defaults to today; `side` must be `"debit"` or `"credit"`.
+- `list_transactions(start_date, end_date, category=None, side=None)`
+  — returns transactions in the given date range, optionally filtered by
+  `category` and/or `side`, ordered by `id`.
+- `summarize(start_date, end_date, category=None, side="debit")`
+  — returns totals grouped by category for the given date range and `side`,
+  ordered by total descending.
+- `edit_transaction(id, name=None, amount=None, category=None, subcategory=None, date=None, note=None, side=None)`
+  — updates only the fields you pass. Raises if `id` does not exist.
+- `delete_transaction(id)` — deletes the row. Raises if `id` does not exist.
+
+Dates must be ISO `YYYY-MM-DD`; `amount` must be `> 0`.
 
 ### Demo — [main_old.py](main_old.py)
 
@@ -81,10 +94,10 @@ uv run fastmcp install claude-desktop main.py
 
 ```text
 fastmcp-demo-server/
-├── main.py            # Expense Tracker MCP server (SQLite-backed)
-├── main_old.py        # Demo MCP server (dice + add)
-├── pyproject.toml     # Project metadata and dependencies
-├── uv.lock            # Pinned dependency lockfile
-├── .python-version    # Python version (3.11)
-└── expenses.db        # SQLite database (auto-created, git-ignored)
+├── main.py             # Transaction Tracker MCP server (SQLite-backed)
+├── main_old.py         # Demo MCP server (dice + add)
+├── pyproject.toml      # Project metadata and dependencies
+├── uv.lock             # Pinned dependency lockfile
+├── .python-version     # Python version (3.11)
+└── transactions.db     # SQLite database (auto-created, git-ignored)
 ```
