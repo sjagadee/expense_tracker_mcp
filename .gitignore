@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # sqlite
-expenses.db
+transactions.db
 
 # claude
 .claude
