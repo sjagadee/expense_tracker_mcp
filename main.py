@@ -5,6 +5,7 @@ import sqlite3
 from datetime import date, datetime
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "transactions.db")
+CATEGORIES_PATH = os.path.join(os.path.dirname(__file__), "categories.json")
 
 mcp = FastMCP("Transaction Tracker MCP Server")
 
@@ -93,7 +94,12 @@ def list_transactions(
 
 
 @mcp.tool
-def summarize(start_date: str, end_date: str, category: str | None = None, side: Literal["debit", "credit"] = "debit") -> list[dict]:
+def summarize(
+    start_date: str,
+    end_date: str,
+    category: str | None = None,
+    side: Literal["debit", "credit"] = "debit",
+) -> list[dict]:
     """Summarize transactions by category and side within the given date range"""
 
     _validate_date(start_date, "start_date")
@@ -168,6 +174,13 @@ def delete_transaction(id: int) -> dict:
         if cur.rowcount == 0:
             raise LookupError(f"Transaction {id} not found")
         return {"status": "ok"}
+
+
+@mcp.resource("transactions://categories", mime_type="application/json")
+def categories():
+    # read fresh each time so you can edit file without restarting
+    with open(CATEGORIES_PATH, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 if __name__ == "__main__":
